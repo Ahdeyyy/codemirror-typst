@@ -1,0 +1,32 @@
+name: publish
+
+# Publishes to npm when a version tag is pushed:
+#   npm version patch && git push --follow-tags
+#
+# Auth is npm trusted publishing (OIDC) — no token secret. One-time setup on
+# npmjs.com: package Settings → Trusted Publisher → GitHub Actions, with this
+# repository and workflow file name (publish.yml).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: bun install --frozen-lockfile
+      - name: check tag matches package.json
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      # prepublishOnly runs the type check, tests and build.
+      - run: npm publish --access public
