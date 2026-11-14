@@ -1,6 +1,6 @@
 {
   "name": "codemirror-typst",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Typst language support for CodeMirror 6: a hand-written incremental Lezer parser, syntax highlighting, folding and indentation. Pure TypeScript, no WASM.",
   "keywords": [
     "codemirror",
