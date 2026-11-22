@@ -4,18 +4,20 @@ import { Scanner, Ch, isAlpha, isDigit, isHexDigit, isIdentStart, isIdentChar, i
 import { parseContentBlock, parseLineComment, parseBlockComment, parseLabel } from "./markup"
 import { parseMathContent } from "./math"
 
-/// Keyword table for quick lookup.
-const KEYWORDS: Record<string, number> = {
-  let: Type.Let, set: Type.Set, show: Type.Show,
-  if: Type.If, else: Type.Else,
-  for: Type.For, in: Type.In, while: Type.While,
-  break: Type.Break, continue: Type.Continue, return: Type.Return,
-  import: Type.Import, include: Type.Include, as: Type.As,
-  not: Type.Not, and: Type.And, or: Type.Or,
-  none: Type.None, auto: Type.Auto,
-  true: Type.True, false: Type.False,
-  context: Type.Context,
-}
+/// Keyword table for quick lookup. A `Map`, not an object literal: an object
+/// also "contains" inherited `Object.prototype` members, so identifiers such
+/// as `constructor` or `toString` would be mistaken for keywords.
+const KEYWORDS: ReadonlyMap<string, number> = new Map([
+  ["let", Type.Let], ["set", Type.Set], ["show", Type.Show],
+  ["if", Type.If], ["else", Type.Else],
+  ["for", Type.For], ["in", Type.In], ["while", Type.While],
+  ["break", Type.Break], ["continue", Type.Continue], ["return", Type.Return],
+  ["import", Type.Import], ["include", Type.Include], ["as", Type.As],
+  ["not", Type.Not], ["and", Type.And], ["or", Type.Or],
+  ["none", Type.None], ["auto", Type.Auto],
+  ["true", Type.True], ["false", Type.False],
+  ["context", Type.Context],
+])
 
 /// Parse a code expression after `#` in markup/math, or as a statement in a code block.
 /// When `embedded` is true, we're in markup context and should only parse a single
@@ -44,7 +46,7 @@ function parseCodeExprInner(s: Scanner, ctx: TypstParseContext, embedded: boolea
   // Keyword-led expressions
   if (isIdentStart(ch)) {
     const word = peekWord(s)
-    const kwType = KEYWORDS[word]
+    const kwType = KEYWORDS.get(word)
 
     if (kwType !== undefined) {
       switch (kwType) {
@@ -379,7 +381,7 @@ function parseAtom(s: Scanner, ctx: TypstParseContext, _embedded: boolean): Elt 
     }
 
     // Keyword-led expressions in expression position
-    const kwType = KEYWORDS[word]
+    const kwType = KEYWORDS.get(word)
     if (kwType !== undefined) {
       switch (kwType) {
         case Type.If: return parseConditional(s, ctx)
@@ -545,7 +547,7 @@ function parseIdentifier(s: Scanner): Elt | null {
 
   // Don't match keywords as identifiers
   const word = s.text.slice(start, s.pos)
-  if (KEYWORDS[word] !== undefined) {
+  if (KEYWORDS.has(word)) {
     s.pos = start
     return null
   }

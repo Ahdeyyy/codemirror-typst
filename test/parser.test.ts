@@ -162,3 +162,29 @@ describe("line-scoped items inside a content block", () => {
     expect(textOf(src, "ListItem")).toBe("- a *b")
   })
 })
+
+// Regression for #1: names that exist on `Object.prototype` are ordinary identifiers.
+describe("identifiers named like Object.prototype members", () => {
+  const names = ["constructor", "toString", "valueOf", "hasOwnProperty", "__proto__", "isPrototypeOf"]
+
+  for (const name of names) {
+    test(`#let ${name} binds and references an Ident`, () => {
+      const src = `#let ${name} = 1\n#${name}`
+      expect(parser.parse(src).toString()).toBe("Document(LetBinding(Hash,Let,Ident,Eq,Int),Space,Ident(Hash))")
+    })
+  }
+
+  test("a call to toString inside a code block", () => {
+    const src = "#{ let x = toString(1) }"
+    expect(errors(src)).toEqual([])
+    expect(textOf(src, "FuncCall")).toBe("toString(1)")
+  })
+
+  test("constructor as a dictionary key", () => {
+    const src = '#(name: "Point", constructor: "new")'
+    expect(errors(src)).toEqual([])
+    expect(parser.parse(src).toString()).toBe(
+      "Document(Dict(Hash,LeftParen,Named(Ident,Colon,Str(StrContent)),Comma,Named(Ident,Colon,Str(StrContent)),RightParen))",
+    )
+  })
+})
